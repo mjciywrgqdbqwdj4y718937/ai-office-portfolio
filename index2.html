@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spatial Lab · 从几张照片到可编辑的 3D 世界</title>
+<link rel="icon" href="data:,">
+<style>
+  :root{
+    --bg:#05070c; --panel:#0b1018; --surface:#111823; --line:#1d2735;
+    --fg:#eaf0fb; --dim:#7f8ea6; --muted:#55637a;
+    --accent:#38e0c8; --accent2:#7b6cff; --warn:#ffb648; --ok:#35d07f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg); color:var(--fg); line-height:1.6;
+    font-family:-apple-system,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+  nav{position:sticky;top:0;z-index:30;background:rgba(5,7,12,.82);
+      backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+  nav .in{max-width:1180px;margin:0 auto;padding:0 28px;height:60px;display:flex;align-items:center;gap:26px}
+  .logo{font-weight:600;font-size:15px;letter-spacing:-.3px}
+  .logo i{color:var(--accent);font-style:normal}
+  nav a{color:var(--dim);text-decoration:none;font-size:13.5px;transition:.15s}
+  nav a:hover{color:var(--fg)}
+  .grow{flex:1}
+  .pill{font-size:11.5px;color:var(--accent);border:1px solid rgba(56,224,200,.3);
+        background:rgba(56,224,200,.08);padding:4px 10px;border-radius:20px}
+
+  header{padding:96px 0 72px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:-30% -20% auto;height:640px;
+    background:radial-gradient(50% 60% at 50% 0%, rgba(123,108,255,.18), rgba(56,224,200,.07) 45%, transparent 72%);
+    pointer-events:none}
+  .eyebrow{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;
+           color:var(--muted);margin-bottom:20px;font-weight:600}
+  h1{font-size:60px;line-height:1.05;letter-spacing:-2px;font-weight:600;max-width:900px}
+  h1 em{font-style:normal;background:linear-gradient(92deg,var(--accent),var(--accent2));
+        -webkit-background-clip:text;background-clip:text;color:transparent}
+  .lead{color:var(--dim);font-size:18px;max-width:660px;margin-top:22px;line-height:1.7}
+  .cta{display:flex;gap:12px;margin-top:34px;flex-wrap:wrap}
+  .btn{display:inline-block;padding:12px 24px;border-radius:9px;font-size:14px;
+       font-weight:500;text-decoration:none;transition:.16s;border:1px solid transparent;cursor:pointer}
+  .btn-p{background:var(--accent);color:#04120f}
+  .btn-p:hover{transform:translateY(-1px);box-shadow:0 10px 26px rgba(56,224,200,.28)}
+  .btn-g{color:var(--fg);border-color:var(--line);background:var(--panel)}
+  .btn-g:hover{border-color:var(--accent);color:var(--accent)}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:56px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:18px}
+  .stat b{display:block;font-size:26px;font-weight:600;letter-spacing:-1px;
+          background:linear-gradient(180deg,#fff,#9fb0c9);-webkit-background-clip:text;
+          background-clip:text;color:transparent}
+  .stat span{font-size:11.5px;color:var(--muted);letter-spacing:.03em}
+
+  section{padding:80px 0}
+  h2{font-size:34px;font-weight:600;letter-spacing:-1.2px;margin-bottom:10px}
+  .sub{color:var(--dim);font-size:15.5px;max-width:640px;margin-bottom:40px}
+
+  .bento{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+  @media (max-width:900px){.bento{grid-template-columns:repeat(2,1fr)}}
+  .cell{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:22px;
+        transition:.18s;position:relative;overflow:hidden}
+  .cell:hover{border-color:#2a3849;background:var(--surface);transform:translateY(-2px)}
+  .cell::before{content:"";position:absolute;inset:0;opacity:0;transition:.25s;pointer-events:none;
+    background:radial-gradient(340px circle at var(--mx,50%) var(--my,0%), rgba(56,224,200,.10), transparent 62%)}
+  .cell:hover::before{opacity:1}
+  .c6{grid-column:span 6}
+  .c3{grid-column:span 3}
+  .c2{grid-column:span 2}
+  @media (max-width:900px){.c6,.c3,.c2{grid-column:span 2}}
+  .cell .tag{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);
+             font-weight:600;margin-bottom:10px}
+  .cell h3{font-size:17px;font-weight:600;letter-spacing:-.3px;margin-bottom:7px}
+  .cell p{font-size:13.2px;color:var(--dim);line-height:1.65}
+  .cell .metric{display:flex;gap:26px;margin-top:20px}
+  .cell .metric div b{display:block;font-size:24px;font-weight:600;letter-spacing:-.8px}
+  .cell .metric div span{font-size:11px;color:var(--muted)}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+  th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+  td{color:var(--dim)}
+  td b{color:var(--fg);font-weight:500}
+  .yes{color:var(--ok)} .no{color:var(--muted)} .part{color:var(--warn)}
+
+  .flow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:26px}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+        padding:14px 16px;min-width:130px}
+  .step b{display:block;font-size:12.5px;margin-bottom:3px}
+  .step span{font-size:10.5px;color:var(--muted)}
+  .arrow{color:var(--muted);font-size:12px}
+
+  .shot{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+  .shot img{width:100%;display:block;aspect-ratio:16/10;object-fit:cover;object-position:top}
+  .shot .cap{padding:12px 16px;font-size:12.5px;color:var(--dim);border-top:1px solid var(--line)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:820px){.two{grid-template-columns:1fr}h1{font-size:38px}}
+
+  .cta-block{margin-top:40px;padding:48px 40px;border-radius:16px;text-align:center;
+    background:linear-gradient(140deg,rgba(123,108,255,.14),rgba(56,224,200,.06) 60%,transparent);
+    border:1px solid rgba(56,224,200,.22)}
+  .cta-block h2{margin-bottom:10px}
+  .cta-block p{color:var(--dim);font-size:14.5px;max-width:540px;margin:0 auto 24px}
+  .cta-block .cta{justify-content:center;margin-top:0}
+
+  code{background:#0d141d;border:1px solid var(--line);border-radius:5px;
+       padding:2px 6px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px;color:var(--accent)}
+  pre{background:#080c11;border:1px solid var(--line);border-radius:10px;padding:16px;
+      overflow:auto;font-family:ui-monospace,Consolas,monospace;font-size:12.5px;
+      color:#b8c8dc;line-height:1.7}
+  pre .k{color:var(--accent)} pre .c{color:var(--muted)}
+
+  footer{border-top:1px solid var(--line);padding:34px 0 50px;color:var(--muted);font-size:12.5px}
+  .foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+</style></head><body>
+
+<nav><div class="in">
+  <div class="logo">Spatial <i>Lab</i></div>
+  <a href="#cap">能力</a>
+  <a href="#compare">对比</a>
+  <a href="#pipe">管线</a>
+  <a href="#demo">示例</a>
+  <div class="grow"></div>
+  <span class="pill">本机运行</span>
+</div></nav>
+
+<header><div class="wrap">
+  <div class="eyebrow">Spatial Intelligence · Local Pipeline</div>
+  <h1>几张照片，<br>一个<em>可编辑的 3D 世界</em></h1>
+  <p class="lead">
+    上传照片，重建出带尺寸的 3D 网格；在浏览器里转着看、调材质、导出 GLB。
+    全程在你自己的显卡上跑，不上传、不排队、不要 API Key。
+  </p>
+  <div class="cta">
+    <a class="btn btn-p" href="villa.html" target="_blank">打开 3D 查看器</a>
+    <a class="btn btn-g" href="#compare">看能力对比</a>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b>25,000</b><span>示例面数</span></div>
+    <div class="stat"><b>6.7s</b><span>页面加载</span></div>
+    <div class="stat"><b>0</b><span>API Key 需求</span></div>
+    <div class="stat"><b>148</b><span>查看帧率</span></div>
+    <div class="stat"><b>8 GB</b><span>显存门槛</span></div>
+  </div>
+</div></header>
+
+<section id="cap"><div class="wrap">
+  <h2>它能做什么</h2>
+  <p class="sub">一条完整的本机管线：从一张图到可导入引擎的网格。</p>
+  <div class="bento">
+    <div class="cell c3">
+      <div class="tag">01 / 重建</div>
+      <h3>单图重建 3D 网格</h3>
+      <p>深度估计 → 点云 → 泊松重建 → 简化，输出封闭网格。不需要多视角设备，一张正面照就能起步。</p>
+      <div class="metric">
+        <div><b>554K</b><span>点云</span></div>
+        <div><b>523K</b><span>重建面</span></div>
+        <div><b>25K</b><span>交付面</span></div>
+      </div>
+    </div>
+    <div class="cell c3">
+      <div class="tag">02 / 查看</div>
+      <h3>浏览器里直接编辑</h3>
+      <p>旋转、缩放、切视角；金属感、粗糙度、环境亮、曝光实时调；线框看结构；一键导出。</p>
+      <div class="metric">
+        <div><b>148</b><span>FPS</span></div>
+        <div><b>3</b><span>视角预设</span></div>
+        <div><b>0.5 MB</b><span>模型体积</span></div>
+      </div>
+    </div>
+    <div class="cell c2">
+      <div class="tag">03</div><h3>真实尺寸</h3>
+      <p>输出带米制尺寸的包围盒，直接判断楼高与进深。</p>
+    </div>
+    <div class="cell c2">
+      <div class="tag">04</div><h3>顶点色保留</h3>
+      <p>重建时把原图颜色写进顶点，无需贴图也有颜色。</p>
+    </div>
+    <div class="cell c2">
+      <div class="tag">05</div><h3>导出通用格式</h3>
+      <p>GLB / PLY / OBJ，可进 Blender、Unity、UE、C4D。</p>
+    </div>
+  </div>
+</div></section>
+
+<section id="compare"><div class="wrap">
+  <h2>和 Atlas 的关系</h2>
+  <p class="sub">World Labs 的 Atlas 是预训练的世界模型（2026-09 发布），本平台是它的<strong>本机轻量等价实现</strong>。差距在哪，写清楚。</p>
+  <table>
+    <tr><th>能力</th><th>Atlas（World Labs）</th><th>Spatial Lab（本平台）</th></tr>
+    <tr><td><b>从照片重建场景</b></td><td class="yes">✅ 2–3 张图超专用模型</td><td class="part">⚠ 单图重建，侧面靠推断</td></tr>
+    <tr><td><b>相机控制生成新视角</b></td><td class="yes">✅ 位姿+轨迹原生输入</td><td class="no">— 不做生成</td></tr>
+    <tr><td><b>1 分钟 1440p 视频</b></td><td class="yes">✅</td><td class="no">—</td></tr>
+    <tr><td><b>高斯泼溅输出</b></td><td class="yes">✅</td><td class="part">⚠ 已装 gsplat，需多视角</td></tr>
+    <tr><td><b>点云输出</b></td><td class="yes">✅</td><td class="yes">✅ PLY</td></tr>
+    <tr><td><b>网格输出</b></td><td class="yes">✅</td><td class="yes">✅ GLB / OBJ</td></tr>
+    <tr><td><b>机器人 real-to-sim</b></td><td class="yes">✅</td><td class="no">—</td></tr>
+    <tr><td><b>要不要联网 / Key</b></td><td class="no">需账号，早期访问</td><td class="yes">✅ 全离线</td></tr>
+    <tr><td><b>硬件门槛</b></td><td class="no">云端</td><td class="yes">8 GB 显存</td></tr>
+  </table>
+  <p style="color:var(--muted);font-size:12.5px;margin-top:16px">
+    一句话：Atlas 做的是「生成世界」，本平台做的是「把真实照片变成可用网格」。前者是研究模型，后者是工程交付。
+  </p>
+</div></section>
+
+<section id="pipe"><div class="wrap">
+  <h2>管线怎么跑</h2>
+  <p class="sub">全程开源，只用 25 MB 的深度模型，不下几 GB 权重。</p>
+  <div class="flow">
+    <div class="step"><b>① 参考图</b><span>正面照 / 效果图</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>② 深度估计</b><span>Depth Anything V2</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>③ 反投影</b><span>针孔模型 → 点云</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>④ 泊松重建</b><span>open3d depth=9</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>⑤ 平滑简化</b><span>Taubin + 二次简化</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>⑥ 导出</b><span>GLB / PLY / OBJ</span></div>
+  </div>
+
+  <div style="margin-top:32px">
+    <pre><span class="c"># 一条命令跑完整管线</span>
+python depth_to_mesh.py --image ref.jpg --faces 25000 --out villa.glb
+
+<span class="c"># 输出</span>
+<span class="k">点云</span>      554,434 点
+<span class="k">重建</span>      271,973 顶点 / 542,456 面
+<span class="k">交付</span>      25,000 面 · 502 KB
+<span class="k">耗时</span>      约 60 秒（RTX 4060 8GB）</pre>
+  </div>
+</div></section>
+
+<section id="demo"><div class="wrap">
+  <h2>实际产出</h2>
+  <p class="sub">下面全部来自本机真实运行，不是效果图。</p>
+  <div class="two">
+    <div class="shot">
+      <img src="https://cdn.jsdelivr.net/gh/mjciywrgqdbqwdj4y718937/ai-office-portfolio@main/demo_viewer.png" alt="3D 查看器">
+      <div class="cap"><b>浏览器查看器</b> · 25,000 面 · 可调材质与视角</div>
+    </div>
+    <div class="shot">
+      <img src="https://cdn.jsdelivr.net/gh/mjciywrgqdbqwdj4y718937/ai-office-portfolio@main/demo_depth.png" alt="重建结果">
+      <div class="cap"><b>重建结果</b> · 从单张参考图得到的两层形体</div>
+    </div>
+  </div>
+
+  <div class="cta-block">
+    <h2>现在就转一下</h2>
+    <p>不用注册，不用上传，打开就能操作。</p>
+    <div class="cta">
+      <a class="btn btn-p" href="villa.html" target="_blank">打开查看器</a>
+      <a class="btn btn-g" href="https://github.com/mjciywrgqdbqwdj4y718937/ai-office-portfolio" target="_blank">看源码</a>
+    </div>
+  </div>
+</div></section>
+
+<footer><div class="wrap foot">
+  <span>Spatial Lab · 本机 3D 重建管线 · 2026</span>
+  <span>不使用任何外部 3D 生成 API</span>
+</div></footer>
+
+<script>
+// Bento 光晕跟随
+document.querySelectorAll('.cell').forEach(el => {
+  el.addEventListener('mousemove', e => {
+    const r = el.getBoundingClientRect();
+    el.style.setProperty('--mx', ((e.clientX-r.left)/r.width*100)+'%');
+    el.style.setProperty('--my', ((e.clientY-r.top)/r.height*100)+'%');
+  });
+});
+</script>
+</body></html>
